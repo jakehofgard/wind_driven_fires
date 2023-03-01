@@ -70,3 +70,4 @@ end
 
 `FireState` : represents the state of the fire world with whether each cell is on fire, its probability of being on fire, and fuel level left.
 `FireObs`: represents the observation of the fire world with whether each cell is on fire.
+# wind_driven_fires
