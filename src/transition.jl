@@ -26,6 +26,7 @@ function POMDPs.transition(pomdp::FireWorld, state::FireState, action::Array{Int
         sp_burn = sp_trans.burning
         sp_burn_probs = sp_trans.burn_probs
         sp_fuels = sp_trans.fuels
+        sp_wind = sp_trans.wind
 
         # get indices of cells where no put out action was applied to
         all_cells = Array[1:total_size]
@@ -46,7 +47,10 @@ function POMDPs.transition(pomdp::FireWorld, state::FireState, action::Array{Int
         end
         # want to keep the burning indicator even if fuel of a cell is 0 for step 3 below
         # as that cell may spread the fire to other cells despite itself being burned to fuel exhaustion
-        sp_new = FireState(sp_burn, sp_burn_probs, sp_fuels_new)
+
+        sp_new_wind = update_wind(sp_wind)
+
+        sp_new = FireState(sp_burn, sp_burn_probs, sp_fuels_new, sp_new_wind)
 
         # 3. update fire spread
         P_xy = fire_spread(pomdp, sp_new)
@@ -64,6 +68,8 @@ function transition_of_states(pomdp::FireWorld, state::FireState, action::Array{
     burning = state.burning
     burn_probs = state.burn_probs
     fuels = state.fuels
+    wind = state.wind
+
     neighbors = FireState[]
     probabilities = Array{Float64,1}(undef,0)
     
@@ -73,7 +79,7 @@ function transition_of_states(pomdp::FireWorld, state::FireState, action::Array{
     act_burn = burning[action] .* action 
     act_on_burning_cells = act_burn[findall(x->x>0, act_burn)]
     num_act_n_burning = length(act_on_burning_cells)
-    
+
     # check if any cell is burning now
     if num_act_n_burning > 0 
         # 1.(a) decrement fuels in those cells
@@ -85,11 +91,11 @@ function transition_of_states(pomdp::FireWorld, state::FireState, action::Array{
             burn = collect(i)
             burning_new = update_fullburn(burning, burn, act_on_burning_cells)
             prob = (1-tprob)^sum(burn)*(tprob)^(num_act_n_burning - sum(burn)) # basically binomial
-            push!(neighbors, FireState(burning_new, burn_probs, fuels_new))
+            push!(neighbors, FireState(burning_new, burn_probs, fuels_new, wind))
             push!(probabilities, prob)
         end
     else # none of the cells we apply action to is burning to begin with
-        push!(neighbors, FireState(burning, burn_probs, fuels))
+        push!(neighbors, FireState(burning, burn_probs, fuels, wind))
         push!(probabilities, 1.0)
     end
     return SparseCat(neighbors, probabilities)
@@ -113,6 +119,7 @@ function update_burn_probs(s::FireState, P_xy::Array{Float64,2})
     burn = s.burning
     burn_probs = s.burn_probs
     fuels = s.fuels
+    wind = s.wind
     
     total_size = length(s.burning)
     burn_probs_update = zeros(total_size)
@@ -137,7 +144,7 @@ function update_burn_probs(s::FireState, P_xy::Array{Float64,2})
     for i in no_fuels
         burn_probs_result[i] = 0
     end
-    return FireState(burn, burn_probs_result, fuels)
+    return FireState(burn, burn_probs_result, fuels, wind)
 end
 
 function fire_spread(pomdp::FireWorld, s::FireState)
@@ -153,11 +160,11 @@ function fire_spread(pomdp::FireWorld, s::FireState)
 #     Wind: Rating of how strong wind is - want to get at direction and speed (relative to direction of two cells)
 #     i.e. need 8 directions (for cell and wind)
 #     Lambda_b: say, fuel level at the cell"
-    wind = pomdp.wind
+    wind = s.wind
     wind_strength = wind[1]
     wind_acc = wind[2]
     wind_dir = wind[3]
-    longest_dist = euclidean([1,1], [GRID_SIZE, GRID_SIZE])
+    longest_dist = euclidean([1,1], [pomdp.grid_size, pomdp.grid_size])
     to_norm = wind_strength * wind_acc * DEFAULT_FUEL
     lambdas = zeros((total_size, total_size))
     P_xy = zeros((total_size, total_size))
@@ -226,6 +233,14 @@ function relative_direction(cart_i::CartesianIndex{2}, cart_j::CartesianIndex{2}
     end
 end
 
+function update_wind(wind)
+    updates = [-1, 0, 1]
+    strength, acc, dir = wind
+    strength_update, dir_update = rand(updates), rand(updates)
+    strength = (strength + strength_update <= 10 & strength + strength_update >= 0) ? strength + strength_update : strength - strength_update
+    dir = (dir + dir_update <= 8 & dir + dir_update >= 1) ? dir + dir_update : dir - dir_update
+    return [strength, acc, dir]
+end
 
 # to get cells no actions applied to
 minus(indx, x) = setdiff(1:length(x), indx)

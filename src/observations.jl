@@ -7,7 +7,7 @@ function POMDPs.observation(pomdp::FireWorld, a::Array{Int64,1}, sp::FireState)
     burning = sp.burning
     fuels = sp.fuels
     
-    P_xy = fire_spread(pomdp.wind, sp)
+    P_xy = fire_spread(pomdp, sp)
     s_new = update_burn_probs(sp, P_xy)
     burn_probs_new = s_new.burn_probs
     

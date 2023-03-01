@@ -63,7 +63,9 @@ function make_initial_state(GRID_SIZE::Int64, rng::AbstractRNG)
     burn_prob_map = burn_map(BURN_THRESHOLD, burns_size, rng)
     init_burn = burn_prob_map .> BURN_THRESHOLD
     init_fuels = ones(Int, GRID_SIZE * GRID_SIZE) * DEFAULT_FUEL
-    return FireState(init_burn, burn_prob_map, init_fuels)
+    wind = [rand(1:10), 1, rand(1:8)]
+    println(wind)
+    return FireState(init_burn, burn_prob_map, init_fuels, wind)
 end
 
 # @show init_state = FireState(init_burn, burn_prob_map, init_fuels)
@@ -109,6 +111,7 @@ struct FireState
     burning::BitArray{1} # an array maintaining what cells are burning
     burn_probs::Array{Float64,1} # an array of probability of cells burning
     fuels::Array{Int64,1} # an array maintaining each cell's fuel level
+    wind::Array{Int64,1} # an array containing the wind across the grid
 end
 
 # POMDP Observation: only observes burning or not
@@ -135,8 +138,6 @@ end
     tprob::Float64 = 1.0
     # discount factor
     discount::Float64 = 0.95
-    # consists of strength, acceleration, and direction
-    wind::Array{Int64,1} = WIND
 end
 
 # Discount factor

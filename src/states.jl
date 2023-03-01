@@ -4,7 +4,7 @@ import POMDPs
 # Initial state distribution
 # function POMDPs.initialstate_distribution(pomdp::FireWorld)
 function POMDPs.initialstate(pomdp::FireWorld)
-    total_size = pomdp.grid_size * grid_size
+    total_size = pomdp.grid_size * pomdp.grid_size
     s = FireState[]
     probs = Array{Float64,1}(undef,0)
     
@@ -12,6 +12,7 @@ function POMDPs.initialstate(pomdp::FireWorld)
     burning = init_state.burning
     burn_probs = init_state.burn_probs
     fuels = init_state.fuels
+    wind = init_state.wind
 
     burn_probs_for_obs = deepcopy(burn_probs)
     not_burning = findall(x->x==0, burning)
@@ -34,8 +35,8 @@ function POMDPs.initialstate(pomdp::FireWorld)
         else
             push!(burns, burning_k)
             push!(probs, individual_prob)
-            push!(s, FireState(burning_k, burn_probs, fuels))
+            push!(s, FireState(burning_k, burn_probs, fuels, wind))
         end
     end
-    return SparseCat(s, normalize!(probs,1))
+    return SparseCat(s, normalize!(probs, 1))
 end

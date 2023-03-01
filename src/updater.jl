@@ -13,7 +13,8 @@ function POMDPs.update(up::HistoryUpdater, pomdp::FireWorld, b::SparseCat{Array{
     next_states = FireState[]
     weights = Array{Float64,1}(undef,0)
     
-    belief_particles = ParticleCollection(b.vals) 
+    belief_particles = ParticleCollection(b.vals)
+    rng = MersenneTwister(264)
     for i in 1:n_particles(belief_particles)
         s_i = rand(rng, belief_particles)
         sp_gen = rand(rng, transition(pomdp, s_i, a))

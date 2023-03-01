@@ -16,4 +16,4 @@ end
 #     return r
 # end
 
-POMDPs.reward(pommdp::FireWorld, s::FireState, a::Array{Int64,1}) = reward(pomdp, s)
+POMDPs.reward(pomdp::FireWorld, s::FireState, a::Array{Int64,1}) = reward(pomdp, s)
