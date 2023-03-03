@@ -48,9 +48,7 @@ function POMDPs.transition(pomdp::FireWorld, state::FireState, action::Array{Int
         # want to keep the burning indicator even if fuel of a cell is 0 for step 3 below
         # as that cell may spread the fire to other cells despite itself being burned to fuel exhaustion
 
-        sp_new_wind = update_wind(sp_wind)
-
-        sp_new = FireState(sp_burn, sp_burn_probs, sp_fuels_new, sp_new_wind)
+        sp_new = FireState(sp_burn, sp_burn_probs, sp_fuels_new, sp_wind)
 
         # 3. update fire spread
         P_xy = fire_spread(pomdp, sp_new)
@@ -69,6 +67,10 @@ function transition_of_states(pomdp::FireWorld, state::FireState, action::Array{
     burn_probs = state.burn_probs
     fuels = state.fuels
     wind = state.wind
+
+    # Generate wind transitions
+    wind_neighbors = get_wind_neighbors(wind)
+    num_winds = length(wind_neighbors)
 
     neighbors = FireState[]
     probabilities = Array{Float64,1}(undef,0)
@@ -91,12 +93,16 @@ function transition_of_states(pomdp::FireWorld, state::FireState, action::Array{
             burn = collect(i)
             burning_new = update_fullburn(burning, burn, act_on_burning_cells)
             prob = (1-tprob)^sum(burn)*(tprob)^(num_act_n_burning - sum(burn)) # basically binomial
-            push!(neighbors, FireState(burning_new, burn_probs, fuels_new, wind))
-            push!(probabilities, prob)
+            for wind in wind_neighbors
+                push!(neighbors, FireState(burning_new, burn_probs, fuels_new, wind))
+                push!(probabilities, prob / num_winds)
+            end
         end
     else # none of the cells we apply action to is burning to begin with
-        push!(neighbors, FireState(burning, burn_probs, fuels, wind))
-        push!(probabilities, 1.0)
+        for wind in wind_neighbors
+            push!(neighbors, FireState(burning, burn_probs, fuels, wind))
+            push!(probabilities, 1.0 / num_winds)
+        end
     end
     return SparseCat(neighbors, probabilities)
 end
@@ -240,6 +246,25 @@ function update_wind(wind)
     strength = (strength + strength_update <= 10 & strength + strength_update >= 0) ? strength + strength_update : strength - strength_update
     dir = (dir + dir_update <= 8 & dir + dir_update >= 1) ? dir + dir_update : dir - dir_update
     return [strength, acc, dir]
+end
+
+function check_feasible_wind(wind)
+    strength, _, dir = wind
+    return (strength >= 1 && strength <= 10 && dir >= 1 && dir <= 8)
+end
+
+function get_wind_neighbors(wind)
+    strength, acc, dir = wind
+    strengths = [strength - 1, strength, strength + 1]
+    dirs = [mod(dir - 1, 1:8), dir, mod(dir + 1, 1:8)]
+    neighbors = []
+    for pair in Iterators.product(strengths, dirs) |> collect
+        candidate = [pair[1], acc, pair[2]]
+        if check_feasible_wind(candidate)
+            push!(neighbors, candidate)
+        end
+    end
+    return neighbors
 end
 
 # to get cells no actions applied to
