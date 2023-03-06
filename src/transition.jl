@@ -1,4 +1,5 @@
-# using POMDPModelTools
+using Distances
+
 const NEIGHBOR_DIST = 1 # how big a neighborhood, in terms of Euclidean distance 
 
 # # not used now
@@ -52,7 +53,7 @@ function POMDPs.transition(pomdp::FireWorld, state::FireState, action::Array{Int
 
         # 3. update fire spread
         P_xy = fire_spread(pomdp, sp_new)
-        sp = update_burn_probs(sp_new, P_xy)
+        sp = update_burn(sp_new, P_xy)
         
         push!(neighbors, sp)
         push!(probabilities, prob)
@@ -121,35 +122,40 @@ end
 
 # FIRE SPREAD
 # returns new FireState with different probability burn map
-function update_burn_probs(s::FireState, P_xy::Array{Float64,2})
+function update_burn(s::FireState, P_xy::Array{Float64,2})
     burn = s.burning
     burn_probs = s.burn_probs
     fuels = s.fuels
     wind = s.wind
     
-    total_size = length(s.burning)
-    burn_probs_update = zeros(total_size)
+    total_size = length(burn)
+    burn_update = zeros(total_size)
     fuels_left = findall(x->x>0, fuels)
     for i in fuels_left
-        burn_probs_update[i] = burn_probs[i]
+        burn_update[i] = burn[i]
     end
 
-    burn_probs_result = zeros(total_size)
+    burn_result = zeros(total_size)
+    burn_result_prob = 0
     for i in 1:total_size
         not_spread_i = 1
         for j in 1:total_size
-            not_spread_j = 1 - P_xy[i,j] * burn_probs_update[j]
-            not_spread_i *= not_spread_j
+            not_spread_i_to_j = 1 - P_xy[i,j] * burn_update[j]
+            not_spread_i *= not_spread_i_to_j
         end
-        burn_probs_result[i] = 1 - not_spread_i 
+        burn_result_prob = 1 - not_spread_i 
+        if rand() < burn_result_prob
+            burn_result[i] = true
+        end
     end
 
     all_cells = collect(1:total_size)
     no_fuels = all_cells[minus(fuels_left, all_cells)]
     for i in no_fuels
-        burn_probs_result[i] = 0
+        burn_new[i] = 0
     end
-    return FireState(burn, burn_probs_result, fuels, wind)
+
+    return FireState(burn_result, burn_probs, fuels, wind)
 end
 
 function fire_spread(pomdp::FireWorld, s::FireState)
@@ -165,10 +171,7 @@ function fire_spread(pomdp::FireWorld, s::FireState)
 #     Wind: Rating of how strong wind is - want to get at direction and speed (relative to direction of two cells)
 #     i.e. need 8 directions (for cell and wind)
 #     Lambda_b: say, fuel level at the cell"
-    wind = s.wind
-    wind_strength = wind[1]
-    wind_acc = wind[2]
-    wind_dir = wind[3]
+    wind_strength, wind_acc, wind_dir = s.wind
     longest_dist = euclidean([1,1], [pomdp.grid_size, pomdp.grid_size])
     to_norm = wind_acc * DEFAULT_FUEL
     lambdas = zeros((total_size, total_size))
@@ -183,7 +186,7 @@ function fire_spread(pomdp::FireWorld, s::FireState)
                 P_xy[i,j] = 1
             else
                 cart_j = cartesian[j]
-                rel_pos = relative_direction(cart_i, cart_j)
+                rel_pos = relative_direction(cart_j, cart_i)
                 wind_factor = find_wind_dir_factor(wind_dir, rel_pos)
                 distance_ij = euclidean([cart_i[1],cart_i[2]], [cart_j[1], cart_j[2]])
                 if distance_ij > NEIGHBOR_DIST
@@ -211,47 +214,11 @@ function find_wind_dir_factor(wind_dir::Int, cell_dir::Int)
 end
 
 function relative_direction(cart_i::CartesianIndex{2}, cart_j::CartesianIndex{2})
-    row_i = cart_i[1]
-    col_i = cart_i[2]
-    row_j = cart_j[1]
-    col_j = cart_j[2]
-    if row_i == row_j # same row
-        if col_j > col_i # j is east of i
-            return 3
-        else
-            return 7
-        end
-    elseif row_j > row_i # j is south of i
-        if col_i == col_j
-            return 4
-        else
-            return 6
-        end
-    elseif row_j < row_i # j is west of i
-        if col_i == col_j
-            return 2
-        else
-            return 8
-        end
-    else # same column
-        if row_j > row_i # j is south of i
-            return 5
-        else
-            return 1
-        end
-    end
-end
-
-function new_relative_direction(cart_i::CartesianIndex{2}, cart_j::CartesianIndex{2})
     x, y = cart_j[1] - cart_i[1], cart_j[2] - cart_i[2]
     angle = atan(x, y) + pi
     rel_dir = mod(round(Int, 4 / pi * angle) - 3, 1:8)
     return rel_dir
 end
-
-cartesian = CartesianIndices((1:12, 1:12))
-relative_direction(cartesian[1], cartesian[14])
-new_relative_direction(cartesian[1], cartesian[23])
 
 function update_wind(wind)
     updates = [-1, 0, 1]
