@@ -138,11 +138,10 @@ function update_burn_probs(s::FireState, P_xy::Array{Float64,2})
     for i in 1:total_size
         not_spread_i = 1
         for j in 1:total_size
-            P_xy[i,j] , burn_probs_update[j]
             not_spread_j = 1 - P_xy[i,j] * burn_probs_update[j]
             not_spread_i *= not_spread_j
-            burn_probs_result[i] = 1 - not_spread_i 
         end
+        burn_probs_result[i] = 1 - not_spread_i 
     end
 
     all_cells = collect(1:total_size)
@@ -171,7 +170,7 @@ function fire_spread(pomdp::FireWorld, s::FireState)
     wind_acc = wind[2]
     wind_dir = wind[3]
     longest_dist = euclidean([1,1], [pomdp.grid_size, pomdp.grid_size])
-    to_norm = wind_strength * wind_acc * DEFAULT_FUEL
+    to_norm = wind_acc * DEFAULT_FUEL
     lambdas = zeros((total_size, total_size))
     P_xy = zeros((total_size, total_size))
     burning = s.burning
@@ -180,17 +179,21 @@ function fire_spread(pomdp::FireWorld, s::FireState)
         fuel_level = fuels[i]
         cart_i = cartesian[i]
         for j in 1:total_size
-            cart_j = cartesian[j]
-            rel_pos = relative_direction(cart_i, cart_j)
-            wind_factor = find_wind_dir_factor(wind_dir, rel_pos)
-            distance_ij = euclidean([cart_i[1],cart_i[2]], [cart_j[1], cart_j[2]])
-            if distance_ij > NEIGHBOR_DIST
-                distance_ij = 0
+            if i == j
+                P_xy[i,j] = 1
+            else
+                cart_j = cartesian[j]
+                rel_pos = relative_direction(cart_i, cart_j)
+                wind_factor = find_wind_dir_factor(wind_dir, rel_pos)
+                distance_ij = euclidean([cart_i[1],cart_i[2]], [cart_j[1], cart_j[2]])
+                if distance_ij > NEIGHBOR_DIST
+                    distance_ij = 0
+                end
+                rel_dist = distance_ij/longest_dist
+                lambda_ij = wind_strength*(wind_acc*rel_dist)*wind_factor*fuel_level/to_norm
+                lambdas[i,j] = lambda_ij
+                P_xy[i,j]= 1 - exp(-lambda_ij)
             end
-            rel_dist = distance_ij/longest_dist
-            lambda_ij = wind_strength*(wind_acc*rel_dist)*wind_factor*fuel_level/to_norm
-            lambdas[i,j] = lambda_ij
-            P_xy[i,j]= 1 - exp(-lambda_ij)
         end
     end
     return P_xy
@@ -239,6 +242,17 @@ function relative_direction(cart_i::CartesianIndex{2}, cart_j::CartesianIndex{2}
     end
 end
 
+function new_relative_direction(cart_i::CartesianIndex{2}, cart_j::CartesianIndex{2})
+    x, y = cart_j[1] - cart_i[1], cart_j[2] - cart_i[2]
+    angle = atan(x, y) + pi
+    rel_dir = mod(round(Int, 4 / pi * angle) - 3, 1:8)
+    return rel_dir
+end
+
+cartesian = CartesianIndices((1:12, 1:12))
+relative_direction(cartesian[1], cartesian[14])
+new_relative_direction(cartesian[1], cartesian[23])
+
 function update_wind(wind)
     updates = [-1, 0, 1]
     strength, acc, dir = wind
@@ -272,4 +286,3 @@ minus(indx, x) = setdiff(1:length(x), indx)
 
 # get permutations
 space(x, n) = vec(collect(Iterators.product([x for i = 1:n]...)))
-
