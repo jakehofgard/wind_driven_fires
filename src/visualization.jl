@@ -26,7 +26,7 @@ fuels = reshape(pomdp.state.fuels, (GRID_SIZE, GRID_SIZE))
 sample_actions = actions(pomdp)[pomdp.state.burning]
 
 transition_model = transition(pomdp, initial_state, rand(sample_actions))
-sample_update = transition_model.vals[1]
+sample_update = transition_model.vals[10]
 new_burning = reshape(sample_update.burning, (GRID_SIZE, GRID_SIZE))
 
 heatmap(1:GRID_SIZE, 1:1:GRID_SIZE, burning)

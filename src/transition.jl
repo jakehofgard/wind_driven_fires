@@ -152,7 +152,7 @@ function update_burn(s::FireState, P_xy::Array{Float64,2})
     all_cells = collect(1:total_size)
     no_fuels = all_cells[minus(fuels_left, all_cells)]
     for i in no_fuels
-        burn_new[i] = 0
+        burn_result[i] = 0
     end
 
     return FireState(burn_result, burn_probs, fuels, wind)

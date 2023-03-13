@@ -8,7 +8,7 @@ function POMDPs.observation(pomdp::FireWorld, a::Array{Int64,1}, sp::FireState)
     probabilities = Array{Float64,1}(undef,0)
 
     NUM_SAMPLES = 10
-    prob = 1/NUM_SAMPLES
+    prob = 1 / NUM_SAMPLES
     for i in 1:NUM_SAMPLES
         burn_obs = deepcopy(sp.burning)
         for j in 1:length(burn_obs)
@@ -26,7 +26,7 @@ function POMDPs.observation(pomdp::FireWorld, a::Array{Int64,1}, sp::FireState)
             burn_obs[ai] = sp.burning[ai]
         end
 
-        push!(neighbors, burn_obs)
+        push!(neighbors, FireObs(burn_obs))
         push!(probabilities, prob)
     end
 

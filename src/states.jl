@@ -3,6 +3,9 @@ import POMDPs
 
 # Initial state distribution
 # function POMDPs.initialstate_distribution(pomdp::FireWorld)
+
+#TODO: Fix this to line up with our initialization!
+
 function POMDPs.initialstate(pomdp::FireWorld)
     total_size = pomdp.grid_size * pomdp.grid_size
     s = FireState[]
@@ -23,7 +26,7 @@ function POMDPs.initialstate(pomdp::FireWorld)
     end
 
     thresholds = collect(1:19)/20
-    individual_prob = 1/length(thresholds)
+    individual_prob = 1 / length(thresholds)
     burns = []
     for threshold_k in thresholds
         burning_k = burn_probs_for_obs .> threshold_k

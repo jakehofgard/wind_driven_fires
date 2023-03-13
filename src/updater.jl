@@ -46,7 +46,6 @@ end
 POMDPs.update(up::HistoryUpdater, b::SparseCat{Array{FireState,1},Array{Float64,1}}, a::Array{Int64,1}, o::FireObs) = update(up, pomdp, b, a, o)
 POMDPs.initialize_belief(updater::HistoryUpdater, belief::Any) = belief
 
-
 # returns probability of observing o
 function in_dist_obs(obs_dist::SparseCat{Array{FireObs,1},Array{Float64,1}}, o::FireObs)
     in_dist = false
