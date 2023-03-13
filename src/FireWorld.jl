@@ -40,6 +40,9 @@ const DEFAULT_FUEL = 5
 # criteria: only a % burning - set maximum number
 const BURN_PERC = 0.1
 const BURN_THRESHOLD = 0.6
+const BURN_RADIUS = 3.0
+const BURN_LIKELIHOOD = 1.0
+
 function make_burn_size(total_size::Int64, burn_perc::Float64)
     burn_size = floor(Int, total_size * burn_perc)
     if burn_size in [0, 1]
@@ -57,14 +60,35 @@ function burn_map(burn_threshold::Float64, burns_size::Array{Int64,1}, rng::Abst
     return shuffle!(rng, burn_map)
 end
 
+function start_burn(size::Int64, burn_radius::Float64, burn_likelihood::Float64)
+    center = rand(rng, 1:size)
+    burns = [center]
+    lin_inds = LinearIndices(zeros((size, size)))
+    center_coords = findfirst(x->x==center, lin_inds)
+
+    for i in 1:size
+        for j in 1:size
+            if euclidean(Tuple(center_coords), [i, j]) <= burn_radius && rand() < burn_likelihood
+                append!(burns, lin_inds[i, j])
+            end
+        end
+    end
+    
+    total_size = size * size
+    arr = 1:total_size
+
+    return arr .∈ [burns]
+end
+
 # initial state
 function make_initial_state(GRID_SIZE::Int64, rng::AbstractRNG)
+    total_size = GRID_SIZE * GRID_SIZE
     burns_size = make_burn_size(GRID_SIZE * GRID_SIZE, BURN_PERC)
     burn_prob_map = burn_map(BURN_THRESHOLD, burns_size, rng)
-    init_burn = burn_prob_map .> BURN_THRESHOLD
+
+    init_burn = start_burn(GRID_SIZE, BURN_RADIUS, BURN_LIKELIHOOD)
     init_fuels = ones(Int, GRID_SIZE * GRID_SIZE) * DEFAULT_FUEL
     wind = [rand(1:10), 1, rand(1:8)]
-    println(wind)
     return FireState(init_burn, burn_prob_map, init_fuels, wind)
 end
 
