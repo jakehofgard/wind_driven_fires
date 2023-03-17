@@ -161,7 +161,7 @@ end
     # probability of successfully putting out a fire
     tprob::Float64 = 1.0
     # discount factor
-    discount::Float64 = 1.0
+    discount::Float64 = 0.9
 end
 
 # Discount factor

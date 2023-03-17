@@ -57,7 +57,7 @@ POMDPs.update(up::HistoryUpdater, b::SparseCat{Array{FireState,1},Array{Float64,
 function POMDPs.initialize_belief(updater::HistoryUpdater, state_distribution::Any)
     s0 = rand(state_distribution)
     burning, burn_probs, wind, fuels = s0.burning, s0.burn_probs, s0.wind, s0.fuels
-    size = length(burning)
+    size = Int(sqrt(length(burning)))
     states = FireState[]
     probs = []
     for center in findall(c->c==1, burning)

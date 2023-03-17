@@ -10,6 +10,7 @@ using LinearAlgebra
 using StatsBase
 using Distances
 using Combinatorics
+include("FireWorld.jl")
 using .FirePOMDP
 include("updater.jl")
 include("observations.jl")
@@ -19,12 +20,31 @@ MAX_ACT = 1
 
 pomdp = FireWorld(grid_size = GRID_SIZE, tprob=0.7)
 
-a_default = sortperm(pomdp.costs)[1:MAX_ACT]
+function a_default(belief, ex)
+    @warn ex
+    obs = rand(belief).burning
+    a = Int64[]
+    total = 0
+    for i in 1:length(obs)
+        if obs[i] == 1
+            push!(a, i)
+            total += 1
+            if total == MAX_ACT
+                break
+            end
+        end
+    end
+    while total < MAX_ACT
+        push!(a, 1)
+        total += 1
+    end
+    return a
+end
 
 solver = POMCPOWSolver(
     rng=MersenneTwister(264), 
     default_action = a_default, 
-    tree_queries = 1000, 
+    tree_queries = 1000,
     max_time = 60
 )
 
