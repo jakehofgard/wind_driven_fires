@@ -155,9 +155,9 @@ end
     # cost map
     costs::Array{Int64,1} = make_cost_map(grid_size, COSTS_PERC, COSTS_ARRAY, rng)
     # 1-sensitivity; probability of an observation of no burning when it actually is, e.g. burning but sensor does not detect
-    bprob_fn::Float64 = 0.2
+    bprob_fn::Int64 = 5 # prob = 1/bprob_fn
     # 1-specificity; probability of an observation of burning when it isn't, false positive; due to lag cells are likely to be burning (more likely if p_small is lower)
-    bprob_fp::Float64 = 0.1
+    bprob_fp::Int64 = 10 # prob = 1/bprob_fp
     # probability of successfully putting out a fire
     tprob::Float64 = 1.0
     # discount factor
