@@ -7,6 +7,9 @@ mutable struct HistoryUpdater <: POMDPs.Updater end
 # function POMDPs.update(up::HistoryUpdater, pomdp::FireWorld, b, a::Array{Int64,1}, o::FireObs)
 function POMDPs.update(up::HistoryUpdater, pomdp::FireWorld, b::SparseCat{Array{FireState,1},Array{Float64,1}}, a::Array{Int64,1}, o::FireObs)
     # particle filter without rejection
+    fn = 1.0/pomdp.bprob_fn
+    fp = 1.0/pomdp.bprob_fp
+
     states = FireState[]
     probabilities = Array{Float64,1}(undef,0)
     
@@ -18,8 +21,7 @@ function POMDPs.update(up::HistoryUpdater, pomdp::FireWorld, b::SparseCat{Array{
     for i in 1:n_particles(belief_particles)
         s_i = rand(rng, belief_particles)
         sp_gen = rand(rng, transition(pomdp, s_i, a))
-        obs_dist = observation(pomdp, a, sp_gen)
-        w_i = 0
+        w_i = compute_weight(fn, fp, o, sp_gen)
         push!(next_states, sp_gen)
         push!(weights, w_i)
     end
@@ -27,7 +29,7 @@ function POMDPs.update(up::HistoryUpdater, pomdp::FireWorld, b::SparseCat{Array{
         println("All zero. No observation o.")
         weights = ones(length(weights)) * (1/length(weights))
     end
-    for_sampling = SparseCat(next_states, weights)
+    for_sampling = SparseCat(next_states, normalize!(weights,1))
     
     # resample
     for i in 1:n_particles(belief_particles)
@@ -45,6 +47,25 @@ end
 
 POMDPs.update(up::HistoryUpdater, b::SparseCat{Array{FireState,1},Array{Float64,1}}, a::Array{Int64,1}, o::FireObs) = update(up, pomdp, b, a, o)
 POMDPs.initialize_belief(updater::HistoryUpdater, belief::Any) = belief
+
+function compute_weight(fn, fp, obs::FireObs, sp_gen::FireState)
+    burning_o = obs.burning
+    burning_sp = sp_gen.burning
+    prob1 = fn/(1 - fn)
+    prob2 = fp/(1 - fp)
+
+    prob = 1.0
+
+    for i in 1:length(burning_o)
+        if burning_o[i] == 1 && burning_sp[i] == 0
+            prob *= prob2
+        elseif burning_o[i] == 0 && burning_sp[i] == 1
+            prob *= prob1
+        end
+    end
+
+    return prob
+end
 
 # returns probability of observing o
 function in_dist_obs(obs_dist::SparseCat{Array{FireObs,1},Array{Float64,1}}, o::FireObs)
