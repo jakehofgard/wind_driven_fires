@@ -26,8 +26,8 @@ using JLD
 export
     FireWorld,
     FireState,
-    FireObs
-
+    FireObs,
+    start_burn
 
 # make initial state
 const RAND_INIT = 264
@@ -41,7 +41,7 @@ const DEFAULT_FUEL = 5
 const BURN_PERC = 0.1
 const BURN_THRESHOLD = 0.6
 const BURN_RADIUS = 3.0
-const BURN_LIKELIHOOD = 1.0
+const BURN_LIKELIHOOD = 0.9
 
 function make_burn_size(total_size::Int64, burn_perc::Float64)
     burn_size = floor(Int, total_size * burn_perc)
@@ -60,8 +60,7 @@ function burn_map(burn_threshold::Float64, burns_size::Array{Int64,1}, rng::Abst
     return shuffle!(rng, burn_map)
 end
 
-function start_burn(size::Int64, burn_radius::Float64, burn_likelihood::Float64)
-    center = rand(rng, 1:size)
+function start_burn(size::Int64, center::Int64, burn_radius::Float64, burn_likelihood::Float64)
     burns = [center]
     lin_inds = LinearIndices(zeros((size, size)))
     center_coords = findfirst(x->x==center, lin_inds)
@@ -85,8 +84,8 @@ function make_initial_state(GRID_SIZE::Int64, rng::AbstractRNG)
     total_size = GRID_SIZE * GRID_SIZE
     burns_size = make_burn_size(GRID_SIZE * GRID_SIZE, BURN_PERC)
     burn_prob_map = burn_map(BURN_THRESHOLD, burns_size, rng)
-
-    init_burn = start_burn(GRID_SIZE, BURN_RADIUS, BURN_LIKELIHOOD)
+    center = rand(rng, 1:total_size)
+    init_burn = start_burn(GRID_SIZE, center, BURN_RADIUS, BURN_LIKELIHOOD)
     init_fuels = ones(Int, GRID_SIZE * GRID_SIZE) * DEFAULT_FUEL
     wind = [rand(1:10), 1, rand(1:8)]
     return FireState(init_burn, burn_prob_map, init_fuels, wind)
@@ -141,6 +140,7 @@ end
 # POMDP Observation: only observes burning or not
 struct FireObs
     burning::BitArray{1} # an array what cells are seen to be burning
+    prob::Float64
 end
 
 
@@ -161,7 +161,7 @@ end
     # probability of successfully putting out a fire
     tprob::Float64 = 1.0
     # discount factor
-    discount::Float64 = 0.95
+    discount::Float64 = 1.0
 end
 
 # Discount factor
@@ -171,7 +171,7 @@ POMDPs.discount(pomdp::FireWorld) = pomdp.discount;
 POMDPs.isterminal(pomdp::FireWorld, state::FireState) = sum(state.burning) == 0
 
 # Equal condition
-POMDPs.isequal(s1::FireState, s2::FireState) = s1.burning == s2.burning && s1.fuels == s2.fuels && s1.burn_probs == s2.burn_probs
+POMDPs.isequal(s1::FireState, s2::FireState) = s1.burning == s2.burning && s1.fuels == s2.fuels
 
 
 include("updater.jl")

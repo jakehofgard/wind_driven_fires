@@ -1,14 +1,17 @@
 import POMDPs
 using POMDPModelTools
+using Distributions
+using .FirePOMDP
+include("observations.jl")
 
 mutable struct HistoryUpdater <: POMDPs.Updater end
-
-lk = ReentrantLock()
 
 # update(up, pomdp, b, a, o)
 # function POMDPs.update(up::HistoryUpdater, pomdp::FireWorld, b, a::Array{Int64,1}, o::FireObs)
 function POMDPs.update(up::HistoryUpdater, pomdp::FireWorld, b::SparseCat{Array{FireState,1},Array{Float64,1}}, a::Array{Int64,1}, o::FireObs)
+    lk = ReentrantLock()
     # particle filter without rejection
+
     fn = 1.0/pomdp.bprob_fn
     fp = 1.0/pomdp.bprob_fp
 
@@ -50,7 +53,21 @@ function POMDPs.update(up::HistoryUpdater, pomdp::FireWorld, b::SparseCat{Array{
 end
 
 POMDPs.update(up::HistoryUpdater, b::SparseCat{Array{FireState,1},Array{Float64,1}}, a::Array{Int64,1}, o::FireObs) = update(up, pomdp, b, a, o)
-POMDPs.initialize_belief(updater::HistoryUpdater, belief::Any) = belief
+
+function POMDPs.initialize_belief(updater::HistoryUpdater, state_distribution::Any)
+    s0 = rand(state_distribution)
+    burning, burn_probs, wind, fuels = s0.burning, s0.burn_probs, s0.wind, s0.fuels
+    size = length(burning)
+    states = FireState[]
+    probs = []
+    for center in findall(c->c==1, burning)
+        new_burning = start_burn(size, center, 3.0, 0.9)
+        new_state = FireState(new_burning, burn_probs, fuels, wind)
+        push!(states, new_state)
+        push!(probs, 1)
+    end
+    return SparseCat(states, normalize!(probs, 1))
+end
 
 function compute_weight(fn, fp, obs::FireObs, sp_gen::FireState)
     burning_o = obs.burning
