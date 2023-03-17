@@ -24,8 +24,8 @@ function POMDPs.update(up::HistoryUpdater, pomdp::FireWorld, b::SparseCat{Array{
     belief_particles = ParticleCollection(b.vals)
     rng = MersenneTwister(264)
     Threads.@threads for i in 1:n_particles(belief_particles)
-        s_i = rand(rng, belief_particles)
-        sp_gen = rand(rng, transition(pomdp, s_i, a))
+        s_i = rand(belief_particles)
+        sp_gen = rand(transition(pomdp, s_i, a))
         w_i = compute_weight(fn, fp, o, sp_gen)
         lock(lk) do
             push!(next_states, sp_gen)
