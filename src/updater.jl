@@ -19,7 +19,7 @@ function POMDPs.update(up::HistoryUpdater, pomdp::FireWorld, b::SparseCat{Array{
         s_i = rand(rng, belief_particles)
         sp_gen = rand(rng, transition(pomdp, s_i, a))
         obs_dist = observation(pomdp, a, sp_gen)
-        w_i = in_dist_obs(obs_dist, o)
+        w_i = 0
         push!(next_states, sp_gen)
         push!(weights, w_i)
     end

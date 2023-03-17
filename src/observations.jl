@@ -20,5 +20,6 @@ function POMDPs.observation(pomdp::FireWorld, a::Array{Int64,1}, sp::FireState)
         for ai in a
             burn_obs[ai] = sp.burning[ai]
         end
+        return FireObs(burn_obs)
     end
 end
