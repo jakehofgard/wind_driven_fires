@@ -30,7 +30,7 @@ b0 = initialize_belief(up, initialstate(pomdp))
 # Stepthrough entire simulation
 using Profile
 
-@profile for (s,a,r,sp,o) in stepthrough(pomdp, planner, up, b0, s0, "s, a, r, sp, o")
+for (s,a,r,sp,o) in stepthrough(pomdp, planner, up, b0, s0, "s, a, r, sp, o")
     println("in state $s")
     println("took action $a")
     println("received observation $o and reward $r")

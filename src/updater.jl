@@ -3,6 +3,8 @@ using POMDPModelTools
 
 mutable struct HistoryUpdater <: POMDPs.Updater end
 
+lk = ReentrantLock()
+
 # update(up, pomdp, b, a, o)
 # function POMDPs.update(up::HistoryUpdater, pomdp::FireWorld, b, a::Array{Int64,1}, o::FireObs)
 function POMDPs.update(up::HistoryUpdater, pomdp::FireWorld, b::SparseCat{Array{FireState,1},Array{Float64,1}}, a::Array{Int64,1}, o::FireObs)
@@ -18,12 +20,14 @@ function POMDPs.update(up::HistoryUpdater, pomdp::FireWorld, b::SparseCat{Array{
     
     belief_particles = ParticleCollection(b.vals)
     rng = MersenneTwister(264)
-    for i in 1:n_particles(belief_particles)
+    Threads.@threads for i in 1:n_particles(belief_particles)
         s_i = rand(rng, belief_particles)
         sp_gen = rand(rng, transition(pomdp, s_i, a))
         w_i = compute_weight(fn, fp, o, sp_gen)
-        push!(next_states, sp_gen)
-        push!(weights, w_i)
+        lock(lk) do
+            push!(next_states, sp_gen)
+            push!(weights, w_i)
+        end
     end
     if sum(weights) == 0 # all next states do not have observation o
         println("All zero. No observation o.")
