@@ -174,7 +174,6 @@ function fire_spread(pomdp::FireWorld, s::FireState)
     wind_strength, wind_acc, wind_dir = s.wind
     longest_dist = euclidean([1,1], [pomdp.grid_size, pomdp.grid_size])
     to_norm = wind_acc * DEFAULT_FUEL
-    lambdas = zeros((total_size, total_size))
     P_xy = zeros((total_size, total_size))
     burning = s.burning
     fuels = s.fuels
@@ -188,13 +187,12 @@ function fire_spread(pomdp::FireWorld, s::FireState)
                 cart_j = cartesian[j]
                 rel_pos = relative_direction(cart_j, cart_i)
                 wind_factor = find_wind_dir_factor(wind_dir, rel_pos)
-                distance_ij = euclidean([cart_i[1],cart_i[2]], [cart_j[1], cart_j[2]])
+                distance_ij = sqrt((cart_i[1]-cart_j[1])^2 + (cart_i[2] - cart_j[2])^2)
                 if distance_ij > NEIGHBOR_DIST
                     distance_ij = 0
                 end
                 rel_dist = distance_ij/longest_dist
                 lambda_ij = wind_strength*(wind_acc*rel_dist)*wind_factor*fuel_level/to_norm
-                lambdas[i,j] = lambda_ij
                 P_xy[i,j]= 1 - exp(-lambda_ij)
             end
         end

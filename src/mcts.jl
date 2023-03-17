@@ -28,9 +28,11 @@ s0 = rand(MersenneTwister(264), initialstate(pomdp))
 b0 = initialize_belief(up, initialstate(pomdp))
 
 # Stepthrough entire simulation
+using Profile
 
-for (s,a,r,sp,o) in stepthrough(pomdp, planner, up, b0, s0, "s, a, r, sp, o")
+@profile for (s,a,r,sp,o) in stepthrough(pomdp, planner, up, b0, s0, "s, a, r, sp, o")
     println("in state $s")
     println("took action $a")
     println("received observation $o and reward $r")
+    break
 end
