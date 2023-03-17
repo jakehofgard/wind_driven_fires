@@ -31,8 +31,7 @@ b0 = initialize_belief(up, initialstate(pomdp))
 using Profile
 
 for (s,a,r,sp,o) in stepthrough(pomdp, planner, up, b0, s0, "s, a, r, sp, o")
-    println("in state $s")
+    # println("in state $s")
     println("took action $a")
-    println("received observation $o and reward $r")
-    break
+    # println("received observation $o and reward $r")
 end
