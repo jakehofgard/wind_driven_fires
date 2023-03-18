@@ -10,10 +10,10 @@ using LinearAlgebra
 using StatsBase
 using Distances
 using Combinatorics
+include("FireWorld.jl")
 using .FirePOMDP
 include("updater.jl")
 include("observations.jl")
-include("FireWorld.jl")
 
 GRID_SIZE = 4
 MAX_ACT = ceil(0.25 * GRID_SIZE)
@@ -33,13 +33,14 @@ random_policy = RandomPolicy(rng, pomdp, up)
 lower = PORollout(random_policy, up)
 upper = 0.0
 
-function a_default(belief, ex)
-    @warn ex
+COSTS = sortperm(pomdp.costs)
+
+function default_act(belief)
     obs = rand(belief).burning
     a = Int64[]
     total = 0
-    for i in 1:length(obs)
-        if obs[i] == 1
+    for i in 1:length(COSTS)
+        if obs[COSTS[i]] == 1
             push!(a, i)
             total += 1
             if total == MAX_ACT
@@ -54,6 +55,11 @@ function a_default(belief, ex)
     return a
 end
 
+function default_for_solver(belief, ex)
+    @warn ex
+    return default_act(belief)
+end
+
 # Tune hyperparameters here!
 solver = AdaOPSSolver(
     bounds=AdaOPS.IndependentBounds(lower, upper, check_terminal=true),
@@ -61,7 +67,7 @@ solver = AdaOPSSolver(
     m_min=30,
     m_max=200,
     max_depth=20,
-    default_action=a_default
+    default_action=default_for_solver
 )
 
 planner = solve(solver, pomdp);
@@ -79,11 +85,13 @@ end
 # The following experiment tests a randomly generated policy against POMCPOW
 
 rng = MersenneTwister()
-default_policy = RandomPolicy(rng, pomdp, up)
+default_policy = FunctionPolicy(default_act)
 
 default = Sim(pomdp, default_policy, up, b0, s0)
 adaops = Sim(pomdp, planner, up, b0, s0)
 
 run([default, adaops]) do sim, hist
+    reward = discounted_reward(hist)
+    println("got discounted reward of $reward")
     return (n_steps=n_steps(hist), reward=discounted_reward(hist))
 end

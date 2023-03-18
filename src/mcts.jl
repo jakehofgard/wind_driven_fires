@@ -10,23 +10,24 @@ using LinearAlgebra
 using StatsBase
 using Distances
 using Combinatorics
+include("FireWorld.jl")
 using .FirePOMDP
 include("updater.jl")
 include("observations.jl")
-include("FireWorld.jl")
 
 GRID_SIZE = 4
 MAX_ACT = ceil(0.25 * GRID_SIZE)
 
 pomdp = FireWorld(grid_size = GRID_SIZE, tprob=1.0)
 
-function a_default(belief, ex)
-    @warn ex
+COSTS = sortperm(pomdp.costs)
+
+function default_act(belief)
     obs = rand(belief).burning
     a = Int64[]
     total = 0
-    for i in 1:length(obs)
-        if obs[i] == 1
+    for i in 1:length(COSTS)
+        if obs[COSTS[i]] == 1
             push!(a, i)
             total += 1
             if total == MAX_ACT
@@ -41,11 +42,16 @@ function a_default(belief, ex)
     return a
 end
 
+function default_for_solver(belief, ex)
+    @warn ex
+    return default_act(belief)
+end
+
 
 # Tune hyperparameters here!
 solver = POMCPOWSolver(
     rng=MersenneTwister(264), 
-    default_action = a_default, 
+    default_action = default_for_solver,
     max_depth = 5, # Tune
     tree_queries = 1000,
     criterion = MaxUCB(0.1), # Tune
@@ -71,11 +77,13 @@ end
 # The following experiment tests a randomly generated policy against POMCPOW
 
 rng = MersenneTwister()
-default_policy = RandomPolicy(rng, pomdp, up)
+default_policy = FunctionPolicy(default_act)
 
 default = Sim(pomdp, default_policy, up, b0, s0)
 pomcpow = Sim(pomdp, planner, up, b0, s0)
 
 run([default, pomcpow]) do sim, hist
+    reward = discounted_reward(hist)
+    println("got discounted reward of $reward")
     return (n_steps=n_steps(hist), reward=discounted_reward(hist))
 end
