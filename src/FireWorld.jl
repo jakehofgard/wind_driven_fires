@@ -125,9 +125,6 @@ function make_cost_map(GRID_SIZE::Int64, COSTS_PERC::Array{Float64,1}, COSTS_ARR
     return COSTS
 end
 
-# initial weather condition
-const WIND = [1, 1, 5]
-
 
 # POMDP State
 struct FireState

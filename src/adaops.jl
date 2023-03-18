@@ -1,7 +1,7 @@
 using Plots
 using POMDPs
 using POMDPModelTools
-using POMCPOW
+using AdaOPS
 using POMDPPolicies
 using POMDPSimulators
 using ParticleFilters
@@ -19,6 +19,19 @@ GRID_SIZE = 4
 MAX_ACT = ceil(0.25 * GRID_SIZE)
 
 pomdp = FireWorld(grid_size = GRID_SIZE, tprob=1.0)
+
+up = HistoryUpdater();
+
+s0 = rand(initialstate(pomdp))
+b0 = initialize_belief(up, initialstate(pomdp))
+
+# In line with AdaOPS paper, upper bound is R_max/(1 - γ), lower bound is determined by random policy
+rng = MersenneTwister()
+random_policy = RandomPolicy(rng, pomdp, up)
+
+# Can change bounds based on AdaOPS/ARDESPOT paper recommendations
+lower = PORollout(random_policy, up)
+upper = 0.0
 
 function a_default(belief, ex)
     @warn ex
@@ -41,22 +54,17 @@ function a_default(belief, ex)
     return a
 end
 
-
 # Tune hyperparameters here!
-solver = POMCPOWSolver(
-    rng=MersenneTwister(264), 
-    default_action = a_default, 
-    max_depth = 5, # Tune
-    tree_queries = 1000,
-    criterion = MaxUCB(0.1), # Tune
-    max_time = 60 # See the effect of decreasing this
+solver = AdaOPSSolver(
+    bounds=AdaOPS.IndependentBounds(lower, upper, check_terminal=true),
+    delta=0.3,
+    m_min=30,
+    m_max=200,
+    max_depth=20,
+    default_action=a_default
 )
 
 planner = solve(solver, pomdp);
-up = HistoryUpdater();
-
-s0 = rand(initialstate(pomdp))
-b0 = initialize_belief(up, initialstate(pomdp))
 
 # Stepthrough entire simulation
 using Profile

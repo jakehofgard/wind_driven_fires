@@ -1,7 +1,7 @@
 using Plots
 using POMDPs
 using POMDPModelTools
-using POMCPOW
+using ARDESPOT
 using POMDPPolicies
 using POMDPSimulators
 using ParticleFilters
@@ -19,6 +19,17 @@ GRID_SIZE = 4
 MAX_ACT = ceil(0.25 * GRID_SIZE)
 
 pomdp = FireWorld(grid_size = GRID_SIZE, tprob=1.0)
+
+up = HistoryUpdater();
+
+s0 = rand(initialstate(pomdp))
+b0 = initialize_belief(up, initialstate(pomdp))
+
+# In line with DESPOT paper, upper bound is R_max/(1 - γ), lower bound is determined by random policy
+rng = MersenneTwister()
+random_policy = RandomPolicy(rng, pomdp, up)
+lower = DefaultPolicyLB(random_policy)
+upper = 0.0
 
 function a_default(belief, ex)
     @warn ex
@@ -41,22 +52,14 @@ function a_default(belief, ex)
     return a
 end
 
-
 # Tune hyperparameters here!
-solver = POMCPOWSolver(
-    rng=MersenneTwister(264), 
-    default_action = a_default, 
-    max_depth = 5, # Tune
-    tree_queries = 1000,
-    criterion = MaxUCB(0.1), # Tune
-    max_time = 60 # See the effect of decreasing this
+solver = DESPOTSolver(
+    bounds=IndependentBounds(lower, upper),
+    max_trials=10, # tune
+    default_action=a_default
 )
 
 planner = solve(solver, pomdp);
-up = HistoryUpdater();
-
-s0 = rand(initialstate(pomdp))
-b0 = initialize_belief(up, initialstate(pomdp))
 
 # Stepthrough entire simulation
 using Profile
@@ -70,7 +73,7 @@ end
 
 # The following experiment tests a randomly generated policy against POMCPOW
 
-rng = MersenneTwister()
+rng = MersenneTwister(256)
 default_policy = RandomPolicy(rng, pomdp, up)
 
 default = Sim(pomdp, default_policy, up, b0, s0)
