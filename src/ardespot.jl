@@ -77,8 +77,8 @@ rng = MersenneTwister(256)
 default_policy = RandomPolicy(rng, pomdp, up)
 
 default = Sim(pomdp, default_policy, up, b0, s0)
-pomcpow = Sim(pomdp, planner, up, b0, s0)
+ardespot = Sim(pomdp, planner, up, b0, s0)
 
-run([default, pomcpow]) do sim, hist
+run([default, ardespot]) do sim, hist
     return (n_steps=n_steps(hist), reward=discounted_reward(hist))
 end
