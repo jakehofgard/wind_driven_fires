@@ -39,14 +39,16 @@ function POMDPs.update(up::HistoryUpdater, pomdp::FireWorld, b::SparseCat{Array{
     for_sampling = SparseCat(next_states, normalize!(weights,1))
     
     # resample
-    for i in 1:n_particles(belief_particles)
+    Threads.@threads for i in 1:n_particles(belief_particles)
         sp_sampled = sample(next_states, Weights(weights))
         in_sample, idx = in_dist_states(states, sp_sampled)
-        if !in_sample # new state
-            push!(states, sp_sampled)
-            push!(probabilities, pdf(for_sampling, sp_sampled))
-        else # state already represented
-            probabilities[idx] += probabilities[idx]
+        lock(lk) do
+            if !in_sample # new state
+                push!(states, sp_sampled)
+                push!(probabilities, pdf(for_sampling, sp_sampled))
+            else # state already represented
+                probabilities[idx] += probabilities[idx]
+            end
         end
     end
     return SparseCat(states, normalize!(probabilities,1))
