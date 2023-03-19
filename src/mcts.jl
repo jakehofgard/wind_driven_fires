@@ -43,7 +43,7 @@ function default_act(belief)
 end
 
 function default_for_solver(belief, ex)
-    @warn ex
+#     @warn ex
     return default_act(belief)
 end
 
@@ -52,9 +52,9 @@ end
 solver = POMCPOWSolver(
     rng=MersenneTwister(264), 
     default_action = default_for_solver,
-    max_depth = 5, # Tune
+    max_depth = 10, # Tune
     tree_queries = 1000,
-    criterion = MaxUCB(0.1), # Tune
+    criterion = MaxUCB(10.0), # Tune
     max_time = 60 # See the effect of decreasing this
 )
 
@@ -67,12 +67,12 @@ b0 = initialize_belief(up, initialstate(pomdp))
 # Stepthrough entire simulation
 using Profile
 
-for (s,a,r,sp,o) in stepthrough(pomdp, planner, up, b0, s0, "s, a, r, sp, o")
-    # println("in state $s")
-    println("took action $a")
-    println("received reward $r")
-    # println("received observation $o and reward $r")
-end
+# for (s,a,r,sp,o) in stepthrough(pomdp, planner, up, b0, s0, "s, a, r, sp, o")
+#     # println("in state $s")
+#     println("took action $a")
+#     println("received reward $r")
+#     # println("received observation $o and reward $r")
+# end
 
 # The following experiment tests a randomly generated policy against POMCPOW
 
