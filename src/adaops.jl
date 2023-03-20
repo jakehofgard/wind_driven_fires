@@ -30,7 +30,7 @@ rng = MersenneTwister()
 random_policy = RandomPolicy(rng, pomdp, up)
 
 # Can change bounds based on AdaOPS/ARDESPOT paper recommendations
-lower = PORollout(random_policy, up)
+lower = -200.0
 upper = 0.0
 
 COSTS = sortperm(pomdp.costs)
@@ -75,12 +75,12 @@ planner = solve(solver, pomdp);
 # Stepthrough entire simulation
 using Profile
 
-for (s,a,r,sp,o) in stepthrough(pomdp, planner, up, b0, s0, "s, a, r, sp, o")
-    # println("in state $s")
-    println("took action $a")
-    println("received reward $r")
-    # println("received observation $o and reward $r")
-end
+# for (s,a,r,sp,o) in stepthrough(pomdp, planner, up, b0, s0, "s, a, r, sp, o")
+#     # println("in state $s")
+#     println("took action $a")
+#     println("received reward $r")
+#     # println("received observation $o and reward $r")
+# end
 
 # The following experiment tests a randomly generated policy against POMCPOW
 

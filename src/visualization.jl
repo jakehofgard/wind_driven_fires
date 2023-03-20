@@ -32,13 +32,11 @@ new_burning = reshape(sample_update.burning, (GRID_SIZE, GRID_SIZE))
 heatmap(1:GRID_SIZE, 1:1:GRID_SIZE, burning)
 heatmap(1:GRID_SIZE, 1:1:GRID_SIZE, new_burning)
 
-
-
 cost_example = heatmap(
     1:GRID_SIZE, 
     1:1:GRID_SIZE, 
     reshape(pomdp.costs, (GRID_SIZE, GRID_SIZE)), 
-    c=colors
+    c=cgrad([:red, :yellow, :green])
 )
 
 savefig(cost_example, "src/figures/example_cost_map.png")

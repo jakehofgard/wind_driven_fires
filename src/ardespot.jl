@@ -68,18 +68,18 @@ solver = DESPOTSolver(
 planner = solve(solver, pomdp);
 
 # Stepthrough entire simulation
-using Profile
+# using Profile
 
-for (s,a,r,sp,o) in stepthrough(pomdp, planner, up, b0, s0, "s, a, r, sp, o")
-    # println("in state $s")
-    println("took action $a")
-    println("received reward $r")
-    # println("received observation $o and reward $r")
-end
+# for (s,a,r,sp,o) in stepthrough(pomdp, planner, up, b0, s0, "s, a, r, sp, o")
+#     # println("in state $s")
+#     println("took action $a")
+#     println("received reward $r")
+#     # println("received observation $o and reward $r")
+# end
 
 # The following experiment tests a randomly generated policy against POMCPOW
 
-rng = MersenneTwister(256)
+rng = MersenneTwister()
 default_policy = FunctionPolicy(default_act)
 
 default = Sim(pomdp, default_policy, up, b0, s0)

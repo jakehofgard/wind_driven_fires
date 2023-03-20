@@ -40,7 +40,7 @@ const DEFAULT_FUEL = 5
 # criteria: only a % burning - set maximum number
 const BURN_PERC = 0.1
 const BURN_THRESHOLD = 0.6
-const BURN_RADIUS = 3.0
+const BURN_RADIUS = 2.0
 const BURN_LIKELIHOOD = 0.9
 
 function make_burn_size(total_size::Int64, burn_perc::Float64)
