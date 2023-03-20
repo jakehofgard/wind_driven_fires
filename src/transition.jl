@@ -1,5 +1,4 @@
 using Distances
-using DSP
 
 const NEIGHBOR_DIST = 1 # how big a neighborhood, in terms of Euclidean distance 
 
