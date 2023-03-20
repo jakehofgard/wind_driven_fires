@@ -12,7 +12,7 @@ using Distances
 using Combinatorics
 using .FirePOMDP
 
-GRID_SIZE = 12
+GRID_SIZE = 10
 MAX_ACT = 1
 
 pomdp = FireWorld(grid_size = GRID_SIZE, tprob = 0.8)

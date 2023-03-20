@@ -10,8 +10,9 @@ using LinearAlgebra
 using StatsBase
 using Distances
 using Combinatorics
-include("FireWorld.jl")
 using .FirePOMDP
+
+include("FireWorld.jl")
 include("updater.jl")
 include("observations.jl")
 
@@ -73,7 +74,6 @@ solver = AdaOPSSolver(
 planner = solve(solver, pomdp);
 
 # Stepthrough entire simulation
-using Profile
 
 # for (s,a,r,sp,o) in stepthrough(pomdp, planner, up, b0, s0, "s, a, r, sp, o")
 #     # println("in state $s")

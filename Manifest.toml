@@ -1,8 +1,16 @@
 # This file is machine-generated - editing it directly is not advised
 
-julia_version = "1.8.5"
+julia_version = "1.8.3"
 manifest_format = "2.0"
-project_hash = "3aabc8de0f7bf997647b0ed01e7637f6141c5ca9"
+project_hash = "40d9f3b263e3aaca99c363a5147826d239b515cf"
+
+[[deps.AEMS]]
+deps = ["BeliefUpdaters", "D3Trees", "FIB", "POMDPModelTools", "POMDPPolicies", "POMDPSimulators", "POMDPTesting", "POMDPs", "Printf"]
+git-tree-sha1 = "27ab597d4c1c2c1f1e3582e9bd68c14141cb9c87"
+repo-rev = "master"
+repo-url = "https://github.com/JuliaPOMDP/AEMS.jl"
+uuid = "3b430cce-3194-5812-b203-bf9e73c3e836"
+version = "0.1.4"
 
 [[deps.ARDESPOT]]
 deps = ["BasicPOMCP", "BeliefUpdaters", "CPUTime", "D3Trees", "POMDPModelTools", "POMDPs", "Parameters", "ParticleFilters", "Printf", "Random"]
@@ -198,7 +206,7 @@ version = "4.6.1"
 [[deps.CompilerSupportLibraries_jll]]
 deps = ["Artifacts", "Libdl"]
 uuid = "e66e0078-7015-5450-92f7-15fbd957f2ae"
-version = "1.0.1+0"
+version = "0.5.2+0"
 
 [[deps.Compose]]
 deps = ["Base64", "Colors", "DataStructures", "Dates", "IterTools", "JSON", "LinearAlgebra", "Measures", "Printf", "Random", "Requires", "Statistics", "UUIDs"]
@@ -362,6 +370,12 @@ deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
 git-tree-sha1 = "c6033cc3892d0ef5bb9cd29b7f2f0331ea5184ea"
 uuid = "f5851436-0d7a-5f13-b9de-f02708fd171a"
 version = "3.3.10+0"
+
+[[deps.FIB]]
+deps = ["POMDPTools", "POMDPs", "Printf"]
+git-tree-sha1 = "c70ea600208939beb0121615b67e99e079119683"
+uuid = "13b007ba-0ca8-5af2-9adf-bc6a6301e25a"
+version = "0.4.4"
 
 [[deps.FileIO]]
 deps = ["Pkg", "Requires", "UUIDs"]
@@ -979,6 +993,12 @@ deps = ["DataFrames", "Distributed", "NamedTupleTools", "POMDPLinter", "POMDPToo
 git-tree-sha1 = "3735b7a48bd892f153ab7327cb71e447e8f18e14"
 uuid = "e0d0a172-29c6-5d4e-96d0-f262df5d01fd"
 version = "0.3.14"
+
+[[deps.POMDPTesting]]
+deps = ["POMDPTools", "POMDPs", "Random", "Reexport"]
+git-tree-sha1 = "e5acfa4a9c84252491860939a2af7f4ffe501057"
+uuid = "92e6a534-49c2-5324-9027-86e3c861ab81"
+version = "0.2.6"
 
 [[deps.POMDPTools]]
 deps = ["CommonRLInterface", "DataFrames", "Distributed", "Distributions", "LinearAlgebra", "NamedTupleTools", "POMDPLinter", "POMDPs", "Parameters", "ProgressMeter", "Random", "Reexport", "SparseArrays", "Statistics", "StatsBase", "Tricks", "UnicodePlots"]
