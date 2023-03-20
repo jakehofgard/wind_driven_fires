@@ -15,7 +15,7 @@ using .FirePOMDP
 include("updater.jl")
 include("observations.jl")
 
-GRID_SIZE = 4
+GRID_SIZE = 8
 MAX_ACT = ceil(0.25 * GRID_SIZE)
 
 pomdp = FireWorld(grid_size = GRID_SIZE, tprob=1.0)
@@ -67,12 +67,40 @@ b0 = initialize_belief(up, initialstate(pomdp))
 # Stepthrough entire simulation
 using Profile
 
-# for (s,a,r,sp,o) in stepthrough(pomdp, planner, up, b0, s0, "s, a, r, sp, o")
-#     # println("in state $s")
-#     println("took action $a")
-#     println("received reward $r")
-#     # println("received observation $o and reward $r")
-# end
+function compute_belief_dist(s::FireState, b::SparseCat{Array{FireState,1},Array{Float64,1}})
+    dist = 0
+    for i in 1:length(b.vals)
+        o, p = b.vals[i], b.probs[i]
+        dist += euclidean(s.burning, o.burning) * p + euclidean(s.fuels, o.fuels) * p / 5
+    end
+    return dist
+end
+
+function draw_grid(s)
+    size = Int(sqrt(length(s.burning)))
+    i = 0
+    for x in 1:size
+        for y in 1:size
+            i += 1
+            if s.burning[i] == 1
+                print("B")
+            else
+                print(" ")
+            end
+        end
+        println()
+    end
+end
+
+Profile.clear()
+for (s,a,r,sp,o,b) in stepthrough(pomdp, planner, up, b0, s0, "s, a, r, sp, o, b")
+    # println("in state $s")
+    dist = compute_belief_dist(s, b)
+    println("distance: $dist, $(length(b.vals))")
+    draw_grid(s)
+    # println("received reward $r")
+    # println("received observation $o and reward $r")
+end
 
 # The following experiment tests a randomly generated policy against POMCPOW
 

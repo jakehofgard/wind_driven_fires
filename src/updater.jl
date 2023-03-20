@@ -23,7 +23,7 @@ function POMDPs.update(up::HistoryUpdater, pomdp::FireWorld, b::SparseCat{Array{
     
     belief_particles = ParticleCollection(b.vals)
     rng = MersenneTwister(264)
-    Threads.@threads for i in 1:n_particles(belief_particles)
+    Threads.@threads for i in 1:16
         s_i = rand(belief_particles)
         sp_gen = rand(transition(pomdp, s_i, a))
         w_i = compute_weight(fn, fp, o, sp_gen)
@@ -39,7 +39,7 @@ function POMDPs.update(up::HistoryUpdater, pomdp::FireWorld, b::SparseCat{Array{
     for_sampling = SparseCat(next_states, normalize!(weights,1))
     
     # resample
-    Threads.@threads for i in 1:n_particles(belief_particles)
+    Threads.@threads for i in 1:16
         sp_sampled = sample(next_states, Weights(weights))
         in_sample, idx = in_dist_states(states, sp_sampled)
         lock(lk) do
