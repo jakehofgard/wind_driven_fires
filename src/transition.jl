@@ -52,8 +52,8 @@ function POMDPs.transition(pomdp::FireWorld, state::FireState, action::Array{Int
         sp_new = FireState(sp_burn, sp_burn_probs, sp_fuels_new, sp_wind)
 
         # 3. update fire spread
-        P_xy = fire_spread(pomdp, sp_new)
-        sp = update_burn(sp_new, P_xy)
+        # P_xy = fire_spread(pomdp, sp_new)
+        sp = update_burn(pomdp, sp_new)
         
         push!(neighbors, sp)
         push!(probabilities, prob)
@@ -122,41 +122,52 @@ end
 
 # FIRE SPREAD
 # returns new FireState with different probability burn map
-function update_burn(s::FireState, P_xy::Array{Float64,2})
+
+direction_cart = [[-1, 0], [-1, 1], [0, 1], [1, 1], [1, 0], [1, -1], [0, -1], [-1, -1]]
+wind_map = [direction_cart[[8,1,2]], direction_cart[1:3], direction_cart[2:4], direction_cart[3:5], direction_cart[4:6], direction_cart[5:7], direction_cart[6:8], direction_cart[[7,8,1]]]
+
+
+function update_burn(pomdp::FireWorld, s::FireState)
     burn = s.burning
     burn_probs = s.burn_probs
     fuels = s.fuels
     wind = s.wind
     
     total_size = length(burn)
-    burn_update = zeros(total_size)
-    fuels_left = findall(x->x>0, fuels)
-    for i in fuels_left
-        burn_update[i] = burn[i]
-    end
 
     burn_result = zeros(total_size)
     burn_result_prob = 0
-    for i in 1:total_size
-        not_spread_i = 1
-        for j in 1:total_size
-            not_spread_i_to_j = 1 - P_xy[i,j] * burn_update[j]
-            not_spread_i *= not_spread_i_to_j
+    wind_strength, wind_acc, wind_dir = s.wind
+    neighbors = wind_map[wind_dir]
+    i = 1
+    to_norm = wind_acc * DEFAULT_FUEL
+    wind_weights = [0.5, 1.0, 0.5]
+    for x in 1:pomdp.grid_size
+        for y in 1:pomdp.grid_size
+            if burn[i] == 0
+                not_spread = 1
+                for (n, ww) in zip(neighbors, wind_weights)
+                    x0, y0 = x + n[1], y + n[2]
+                    idx0 = (x0 - 1) * pomdp.grid_size + y0
+                    if 1 ≤ x0 ≤ pomdp.grid_size && 1 ≤ y0 ≤ pomdp.grid_size && fuels[idx0] > 0
+                        fuel_level = fuels[idx0]
+                        lambda = 1 - exp(-wind_strength*(wind_acc)*ww*fuel_level/to_norm)
+                        not_spread *= 1 - lambda * burn[idx0]
+                    end
+                end
+                if rand() < 1 - not_spread
+                    burn_result[i] = true
+                end
+            elseif fuels[i] == 0
+                burn_result[i] = 0
+            end
+            i += 1
         end
-        burn_result_prob = 1 - not_spread_i 
-        if rand() < burn_result_prob
-            burn_result[i] = true
-        end
-    end
-
-    all_cells = collect(1:total_size)
-    no_fuels = all_cells[minus(fuels_left, all_cells)]
-    for i in no_fuels
-        burn_result[i] = 0
     end
 
     return FireState(burn_result, burn_probs, fuels, wind)
 end
+
 
 function fire_spread(pomdp::FireWorld, s::FireState)
     total_size = pomdp.grid_size * pomdp.grid_size
@@ -197,8 +208,18 @@ function fire_spread(pomdp::FireWorld, s::FireState)
             end
         end
     end
+    lambda_ij_weak = 1 - exp(-wind_strength*(wind_acc*rel_dist)*0.5*fuel_level/to_norm)
+    lambda_ij_strong = 1 - exp(-wind_strength*(wind_acc*rel_dist)*1.0*fuel_level/to_norm)
+    idx = 1
+    for i in 1:pomdp.grid_size
+        for j in 1:pomdp.grid_size
+            neigbor_idx = idx + 1
+            idx += 1
+        end
+    end
     return P_xy
 end
+
 
 function find_wind_dir_factor(wind_dir::Int, cell_dir::Int)
     alignment = abs(wind_dir - cell_dir)
